@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: mydemo
-        image:kanagarasu/mydemo-app:6
+        image:kanagarasu/mydemo-app:9
         ports:
         - containerPort: 80
 ---
