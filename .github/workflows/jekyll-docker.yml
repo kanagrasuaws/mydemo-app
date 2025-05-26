@@ -1,4 +1,4 @@
-name: Jekyll Build and Docker Push
+name: Jekyll Build, Test, Docker Push & Deploy
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     name: Build Jekyll Site
     runs-on: ubuntu-latest
     outputs:
-      site-dir: ${{ steps.site.outputs.dir }}
+      site-dir: ${{ steps.set-output.outputs.dir }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -29,10 +29,34 @@ jobs:
           name: jekyll-site
           path: _site
 
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: jekyll-site
+          path: _site
+
+      - name: Validate HTML (Optional)
+        run: |
+          sudo apt-get install tidy -y
+          find _site -name '*.html' -exec tidy -qe {} \;
+
+      - name: Lint Markdown (Optional)
+        run: |
+          gem install mdl
+          mdl .
+
   push:
     name: Push Docker Image
     runs-on: ubuntu-latest
-    needs: build
+    needs: test
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -53,3 +77,19 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }} -f Dockerfile .
           docker push ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }}
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: push
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }}
+            docker stop jekyll-site || true && docker rm jekyll-site || true
+            docker run -d --name jekyll-site -p 80:80 ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }}
