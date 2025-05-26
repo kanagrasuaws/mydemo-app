@@ -82,7 +82,7 @@ jobs:
               ${{ secrets.DOCKER_USERNAME }}/mydemo-app:${{ github.run_number }}
   deploy:
      name: Deploy on Self-Hosted Server
-     runs-on: self-hosted
+     runs-on: ubuntu-latest
      needs: push
      steps:
        - name: Pull and Run Docker Container
