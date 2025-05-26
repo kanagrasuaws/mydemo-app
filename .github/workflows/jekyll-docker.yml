@@ -81,13 +81,18 @@ jobs:
               ${{ secrets.DOCKER_USERNAME }}/mydemo-app:latest
               ${{ secrets.DOCKER_USERNAME }}/mydemo-app:${{ github.run_number }}
   deploy:
-     name: Deploy on Self-Hosted Server
-     runs-on: ubuntu-latest
-     needs: push
-     steps:
-       - name: Pull and Run Docker Container
-         run: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }}
-            docker stop jekyll-site || true
-            docker rm jekyll-site || true
-            docker run -d --name jekyll-site -p 80:80 ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }}
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: push
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/mydemo-app:${{ github.run_number }}
+            docker stop mydemo-app || true
+            docker rm mydemo-app || true
+            docker run -d --name jekyll-site -p 80:80 ${{ secrets.DOCKER_USERNAME }}/mydemo-app:${{ github.run_number }}
