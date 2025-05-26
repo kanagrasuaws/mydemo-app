@@ -55,29 +55,21 @@ jobs:
 
 
   push:
-    name: Push Docker Image
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: jekyll-site
-          path: _site
-
-      - name: Log in to Docker Hub
+      - uses: actions/checkout@v3
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
       - name: Build and Push Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }} -f Dockerfile .
-          docker push ${{ secrets.DOCKER_USERNAME }}/jekyll-site:${{ github.run_number }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/mydemo-app:latest
 
   deploy:
     name: Deploy to Server
