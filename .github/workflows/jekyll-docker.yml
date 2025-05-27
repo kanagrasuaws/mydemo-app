@@ -95,4 +95,4 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/mydemo-app:${{ github.run_number }}
             docker stop mydemo-app || true
             docker rm mydemo-app || true
-            docker run -d --name jekyll-site -p 80:80 ${{ secrets.DOCKER_USERNAME }}/mydemo-app:${{ github.run_number }}
+            docker run -d --name jekyll-site -p 81:80 ${{ secrets.DOCKER_USERNAME }}/mydemo-app:${{ github.run_number }}
